@@ -3,39 +3,65 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Form, FormControl } from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { CustomFormField } from '../custom-form-field';
 import { SubmitButton } from '../submit-button';
 import { useState } from 'react';
-import { UserFormValidation } from '@/lib/validation';
-import { useRouter } from 'next/navigation';
-import { createUser } from '@/lib/actions/patient.actions';
+import { PatientFormValidation } from '@/lib/validation';
 import { FormFieldType } from './PatientForm';
-import { Label, RadioGroup, RadioGroupItem } from '../ui';
-import { GenderOptions } from '@/constants';
+import {
+  AddressAndOccupation,
+  Allergies,
+  BirthdayAndGender,
+  ConsentAndPrivacy,
+  DocumentUpload,
+  EmailAndPhone,
+  EmergencyContact,
+  Insurance,
+  MedicalHistory,
+  PrimaryPhysician,
+} from '../register';
+import { PatientFormDefaultValues } from '@/constants';
+import { useRouter } from 'next/navigation';
+import { registerPatient } from '@/lib/actions/patient.actions';
 
 const RegisterForm = ({ user }: { user: User }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const form = useForm<z.infer<typeof UserFormValidation>>({
-    resolver: zodResolver(UserFormValidation),
+  const form = useForm<z.infer<typeof PatientFormValidation>>({
+    // @ts-ignore
+    resolver: zodResolver(PatientFormValidation),
     defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
+      ...PatientFormDefaultValues,
     },
   });
 
-  async function onSubmit({ name, email, phone }: z.infer<typeof UserFormValidation>) {
+  async function onSubmit(values: any) {
     setIsLoading(true);
+
+    let formData;
+
+    if (values.identificationDocument && values.identificationDocument.length > 0) {
+      const blobFile = new Blob([values.identificationDocument[0]], {
+        type: values.identificationDocument[0].type,
+      });
+
+      formData = new FormData();
+      formData.append('blobFile', blobFile);
+      formData.append('fileName', values.identificationDocument[0].name);
+    }
+
     try {
-      const userData = { name, email, phone };
+      const patientData = {
+        ...values,
+        userId: user.$id,
+        birthDate: new Date(values.birthDate),
+        identificationDocument: formData,
+      };
 
-      const user = await createUser(userData);
+      const patient = await registerPatient(patientData);
 
-      if (user) {
-        router.push(`/patients/${user.$id}/register`);
-      }
+      if (patient) router.push(`/patients/${user.$id}/new-appointment`);
     } catch (error) {
       console.log(error);
     } finally {
@@ -67,72 +93,34 @@ const RegisterForm = ({ user }: { user: User }) => {
         />
 
         {/* поле емейла и телефона */}
-        <div className="flex flex-col gap-6 xl:flex-row">
-          <CustomFormField
-            fieldType={FormFieldType.INPUT}
-            control={form.control}
-            name="email"
-            label="Email"
-            placeholder="Email..."
-            iconSrc="/assets/icons/email.svg"
-            iconAlt="email"
-          />
-
-          <CustomFormField
-            fieldType={FormFieldType.PHONE_INPUT}
-            control={form.control}
-            name="phone"
-            label="Phone number"
-            placeholder="Номер телефона..."
-          />
-        </div>
+        <EmailAndPhone form={form} />
 
         {/* поле день рождения и гендера */}
-        <div className="flex flex-col gap-6 xl:flex-row">
-          <CustomFormField
-            fieldType={FormFieldType.DATE_PICKER}
-            control={form.control}
-            name="birthDate"
-            label="Date of Birth"
-          />
+        <BirthdayAndGender form={form} />
 
-          <CustomFormField
-            fieldType={FormFieldType.SKELETON}
-            control={form.control}
-            name="gender"
-            label="Gender"
-            renderSkeleton={(field) => (
-              <FormControl>
-                <RadioGroup
-                  className="flex h-11 gap-6 xl:justify-between"
-                  onChange={field.onChange}
-                  defaultValue={field.value}>
-                  {GenderOptions.map((option) => (
-                    <div key={option} className="radio-group">
-                      <RadioGroupItem value={option} id={option} className="cursor-pointer" />
-                      <Label htmlFor={option} className="cursor-pointer">
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </FormControl>
-            )}
-          />
-        </div>
+        {/* поле адреса и рода занятий */}
+        <AddressAndOccupation form={form} />
 
-        <section className="space-y-6">
-          <div className="mb-9 space-y-1">
-            <h2 className="sub-header">Medical Information</h2>
-          </div>
-        </section>
+        {/* поле контактного лица */}
+        <EmergencyContact form={form} />
 
-        {/* поле ----- */}
-        <div className="flex flex-col gap-6 xl:flex-row"></div>
+        {/* Выбор врача */}
+        <PrimaryPhysician form={form} />
 
-        <div className="flex flex-col gap-6 xl:flex-row"></div>
+        {/* Страховая и номер полиса */}
+        <Insurance form={form} />
 
-        <div className="flex flex-col gap-6 xl:flex-row"></div>
+        {/* Аллергии и текущее лечение */}
+        <Allergies form={form} />
+
+        {/* Наследственные заболевания и ----- */}
+        <MedicalHistory form={form} />
+
+        {/* Выбор документа и загрузка */}
+        <DocumentUpload form={form} />
+
+        {/* Cогласие и конфиденциальность */}
+        <ConsentAndPrivacy form={form} />
 
         <SubmitButton isLoading={isLoading}>Get Started</SubmitButton>
       </form>

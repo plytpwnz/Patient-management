@@ -1,0 +1,10 @@
+export { ConsentAndPrivacy } from './consent-and-privacy';
+export { DocumentUpload } from './document-upload';
+export { EmergencyContact } from './emergency-contact';
+export { MedicalHistory } from './medical-history';
+export { Allergies } from './allergies';
+export { Insurance } from './insurance';
+export { PrimaryPhysician } from './primary-physician';
+export { AddressAndOccupation } from './address-and-occupation';
+export { BirthdayAndGender } from './birthday-and-gender';
+export { EmailAndPhone } from './email-and-phone';

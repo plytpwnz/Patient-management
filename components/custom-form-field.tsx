@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { Input } from './ui';
+import { Checkbox, Input, Select, Textarea } from './ui';
 import { Control } from 'react-hook-form';
 import { FormFieldType } from './forms/PatientForm';
 import Image from 'next/image';
@@ -11,6 +11,7 @@ import PhoneInput from 'react-phone-number-input';
 import DatePicker from 'react-datepicker';
 
 import 'react-datepicker/dist/react-datepicker.css';
+import { SelectContent, SelectTrigger, SelectValue } from './ui/select';
 
 interface CustomProps {
   control: Control<any>;
@@ -30,7 +31,6 @@ interface CustomProps {
 const RenderField = ({ field, props }: { field: any; props: CustomProps }) => {
   const { fieldType, iconSrc, iconAlt, placeholder, showTimeSelect, dateFormat, renderSkeleton } =
     props;
-  console.log(dateFormat);
 
   switch (fieldType) {
     case FormFieldType.INPUT:
@@ -48,6 +48,17 @@ const RenderField = ({ field, props }: { field: any; props: CustomProps }) => {
           </FormControl>
         </div>
       );
+    case FormFieldType.TEXTAREA:
+      return (
+        <FormControl>
+          <Textarea
+            placeholder={placeholder}
+            {...field}
+            className="shad-textArea"
+            disabled={props.disabled}
+          />
+        </FormControl>
+      );
     case FormFieldType.PHONE_INPUT:
       return (
         <FormControl>
@@ -58,7 +69,7 @@ const RenderField = ({ field, props }: { field: any; props: CustomProps }) => {
             withCountryCallingCode
             value={field.value}
             onChange={field.onChange}
-            className="mt-1 h-11 rounded-md px-4 py-2 text-sm bg-dark-400 border border-gray-800 text-white"
+            className="mt-1 h-9 rounded-md px-4 py-2 text-sm bg-dark-400 border border-gray-800 text-white"
           />
         </FormControl>
       );
@@ -84,8 +95,32 @@ const RenderField = ({ field, props }: { field: any; props: CustomProps }) => {
           </FormControl>
         </div>
       );
+    case FormFieldType.SELECT:
+      return (
+        <FormControl>
+          <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormControl className="shad-select-trigger cursor-pointer">
+              <SelectTrigger>
+                <SelectValue placeholder={placeholder} className="cursor-pointer" />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent className="shad-select-content">{props.children}</SelectContent>
+          </Select>
+        </FormControl>
+      );
     case FormFieldType.SKELETON:
       return renderSkeleton ? renderSkeleton(field) : null;
+    case FormFieldType.CHECKBOX:
+      return (
+        <FormControl>
+          <div className="flex items-center gap-4">
+            <Checkbox id={props.name} checked={field.value} onCheckedChange={field.onChange} className='cursor-pointer' />
+            <label htmlFor={props.name} className='checkbox-label' >
+              {props.label}
+            </label>
+          </div>
+        </FormControl>
+      );
     default:
       break;
   }
